@@ -1,0 +1,74 @@
+#include "scheduler.h"
+#include "timer.h"
+#include <stdio.h>
+
+static tcb_t* ready_queue[MAX_TASKS];
+static int ready_queue_size = 0;
+
+// Internal function declarations
+void task_set_current(tcb_t* task);
+tcb_t* task_get_all_tasks();
+uint32_t task_get_count();
+void timer_tick();
+
+void scheduler_init() {
+    ready_queue_size = 0;
+}
+
+void scheduler_add_task(tcb_t* task) {
+    if (ready_queue_size < MAX_TASKS) {
+        ready_queue[ready_queue_size++] = task;
+    }
+}
+
+void schedule() {
+    // Find the highest priority ready task
+    tcb_t* next_task = NULL;
+    int highest_priority = -1;
+
+    for (int i = 0; i < ready_queue_size; i++) {
+        if (ready_queue[i]->state == TASK_READY && (int)ready_queue[i]->priority > highest_priority) {
+            highest_priority = ready_queue[i]->priority;
+            next_task = ready_queue[i];
+        }
+    }
+
+    if (next_task) {
+        tcb_t* current_task = task_get_current();
+        if (current_task && current_task->state == TASK_RUNNING) {
+            current_task->state = TASK_READY;
+        }
+        
+        next_task->state = TASK_RUNNING;
+        task_set_current(next_task);
+
+        // Simulate context switch and run the task
+        printf("Scheduler: Running Task %d (Priority: %d)\n", next_task->id, next_task->priority);
+        next_task->task_func(next_task->arg);
+
+        // If the task function returns, it's considered finished for this simulation
+        if (next_task->state == TASK_RUNNING) {
+             next_task->state = TASK_READY;
+        }
+    } else {
+        // No ready tasks, idle
+        printf("Scheduler: No ready tasks. Idling.\n");
+    }
+}
+
+// This function is called by the timer interrupt handler
+void scheduler_tick() {
+    tcb_t* all_tasks = task_get_all_tasks();
+    uint32_t num_tasks = task_get_count();
+    uint32_t current_ticks = timer_get_ticks();
+
+    // Check for tasks that were sleeping
+    for (uint32_t i = 0; i < num_tasks; i++) {
+        if (all_tasks[i].state == TASK_BLOCKED && current_ticks >= all_tasks[i].sleep_ticks) {
+            all_tasks[i].state = TASK_READY;
+        }
+    }
+
+    // Trigger a reschedule
+    schedule();
+}
