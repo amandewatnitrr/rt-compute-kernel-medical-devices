@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Kernel Real-Time Monitor</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Deterministic Real-Time Compute Kernel</h1>
+            <h2>Medical Device Monitor</h2>
+        </header>
+
+        <main>
+            <div class="chart-container">
+                <h3>Live Patient Heart Rate (BPM)</h3>
+                <canvas id="hrChart"></canvas>
+            </div>
+            <div class="log-container">
+                <div class="log-header">
+                    <h3>Kernel Execution Log</h3>
+                    <div class="controls">
+                        <button id="pauseBtn" type="button">Pause</button>
+                        <button id="resumeBtn" type="button" style="display:none;">Resume</button>
+                        <button id="stopBtn" type="button">Stop Stream</button>
+                        <button id="startBtn" type="button" style="display:none;">Start Stream</button>
+                    </div>
+                </div>
+                <div id="log" class="log-box"></div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Project for the IDEA Hackathon. Simulating a real-time kernel for medical devices.</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
