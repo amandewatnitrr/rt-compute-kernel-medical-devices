@@ -4,30 +4,29 @@ Use this document verbatim (or selectively) when pitching, demoing, or defending
 
 ---
 ## 1. Elevator Pitch (30–45 seconds)
-Modern medical devices—like infusion pumps, ventilators, and monitors—must perform multiple critical functions reliably and on time. If a device misses a deadline, patient safety is at risk. Most general-purpose operating systems cannot guarantee this level of timing precision. Our project is a lightweight, deterministic real-time kernel with a live web visualization. It shows, in real time, how medical tasks are scheduled, executed, and protected from interference—laying the groundwork for certifiable, safe medical software.
+Modern medical devices—like infusion pumps, ventilators, and monitors—must perform multiple critical functions reliably and on time. If a device misses a deadline, patient safety is at risk. Most general-purpose operating systems cannot guarantee this level of timing precision. Our project is a lightweight, Deterministic Real-Time Compute Kernel for Medical Devices with a live web visualization. It shows, in real time, how medical tasks are scheduled, executed, and protected from interference—laying the groundwork for certifiable, safe medical software.
 
 ---
 ## 2. Problem Statement
-Medical devices must:
-- Meet strict timing deadlines for every critical action (e.g., dose delivery, alarm notification).
-- Behave predictably in all scenarios, supporting regulatory requirements (IEC 62304, ISO 14971).
-- Run on resource-constrained hardware (low RAM/Flash).
-- Keep life-critical functions isolated from less important ones.
 
-Existing solutions often:
-- Allow unpredictable delays (jitter) due to complex scheduling.
-- Are too large and complex for easy certification and audit.
-- Include unnecessary features for medical use cases.
+The development of software for medical devices presents a unique set of challenges that standard operating systems are ill-equipped to handle. This creates the need for a specialized **compute kernel** with specific, non-negotiable attributes:
 
-Our kernel is designed for clarity, predictability, and easy inspection—making it ideal for medical certification.
+*   **The Real-Time Challenge:** Medical devices demand absolute adherence to timing. A ventilator must deliver a breath at a precise moment, and an infusion pump cannot be late with a dose. This requires a **real-time** system that guarantees operations complete within strict deadlines, every single time.
+
+*   **The Determinism Challenge:** Predictability is paramount for patient safety and regulatory approval (like IEC 62304). The system's behavior must be completely foreseeable; the same inputs must always produce the same outputs in the same amount of time. General-purpose OS schedulers, with their inherent randomness and jitter, fail to provide this **deterministic** guarantee.
+
+*   **The Efficiency and Safety Challenge:** Many medical devices are resource-constrained. Furthermore, life-critical functions must be shielded from non-essential ones. Off-the-shelf solutions are often bloated, containing unnecessary features that increase the attack surface and make safety certification a complex and expensive task.
+
+Our **Deterministic Real-Time Compute Kernel for Medical Devices** is engineered from the ground up to solve these specific problems. It prioritizes predictability, timeliness, and simplicity, providing a transparent and auditable foundation for building safe and certifiable medical software.
 
 ---
 ## 3. Why Is This Needed?
-1. **Patient Safety:** Every action must happen on time—no missed doses or delayed alarms.
+1. **Patient Safety:** Every action must happen on time—no missed doses or delayed alarms. Our kernel now includes an alerting system to demonstrate this.
 2. **Regulatory Approval:** Predictable, transparent design makes hazard analysis and certification easier.
 3. **Resource Efficiency:** Many devices run on simple microcontrollers; code must be small and fast.
 4. **Auditability:** A simple, well-documented core helps with failure analysis and regulatory review.
-5. **Extensibility:** Clear building blocks allow future features (e.g., secure communication, memory protection) without losing safety.
+5. **Cross-Platform:** The kernel is designed to be portable and now runs on Windows, macOS, and Linux.
+6. **Extensibility:** Clear building blocks allow future features (e.g., secure communication, memory protection) without losing safety.
 
 ---
 ## 4. High-Level Architecture
@@ -35,7 +34,8 @@ Our kernel is designed for clarity, predictability, and easy inspection—making
 +---------------------------------------------------+
 | Demo Application (medical workflow simulation)    |
 |  - Vitals Task (High Priority)                   |
-|  - Drug Delivery Task (Medium Priority)          |
+|  - SpO2 Monitoring Task (High Priority)          |
+|  - Alerting System                               |
 |  - Display Task (Low Priority)                   |
 +----------------------+--------------------------+
 |         Kernel Core  |                          |
@@ -52,7 +52,7 @@ Our kernel is designed for clarity, predictability, and easy inspection—making
 
 **Key Components (Simplified):**
 - **Task Control Block (TCB):** Tracks each task’s name, priority, status, and wake-up time.
-- **Scheduler:** Always runs the most important (highest priority) ready task.
+- **Scheduler:** Always runs the most important (highest priority) ready task. If multiple tasks have the same priority, it uses round-robin scheduling.
 - **Timer:** Wakes up tasks at the right time.
 - **IPC / Mutex:** Ensures only one task updates shared medical data at a time—no mix-ups.
 - **Web Visualization:** Shows kernel activity live in your browser.
@@ -66,25 +66,27 @@ Our kernel is designed for clarity, predictability, and easy inspection—making
 ## 5. Implementation Summary (C + Node.js + Web)
 | Layer      | Technology                | Purpose                                 |
 |------------|---------------------------|-----------------------------------------|
-| Kernel     | C (ISO C99)               | Core logic for deterministic scheduling |
+| Kernel     | C (ISO C99)               | Core logic for deterministic scheduling, cross-platform |
 | Web Server | Node.js (Express, Socket.IO)| Streams kernel output to browser        |
-| Frontend   | HTML/CSS/JS + Chart.js    | Live heart rate graph & event log       |
+| Frontend   | HTML/CSS/JS + Chart.js    | Live data graphs & event log with alerts |
 
 **Implementation Steps:**
 1. Defined clear interfaces for tasks, scheduling, timing, and data protection.
 2. Created simple, fixed-size task storage for reliability.
-3. Built a scheduler that always picks the highest-priority ready task.
+3. Built a scheduler that always picks the highest-priority ready task, with round-robin for ties.
 4. Added a mutex to protect shared medical data.
-5. Output kernel events as structured JSON lines for easy visualization.
-6. Node.js server relays kernel output to the browser in real time.
-7. Web UI shows live graphs and logs, with controls for pausing and restarting.
-8. Demo tasks simulate a real medical workflow.
-9. Basic tests ensure correct task creation and scheduler startup.
+5. Implemented an alerting system for critical events.
+6. Output kernel events as structured JSON lines for easy visualization.
+7. Node.js server relays kernel output to the browser in real time.
+8. Web UI shows live graphs and logs, with controls for pausing and restarting.
+9. Demo tasks simulate a real medical workflow.
+10. Basic tests ensure correct task creation and scheduler startup.
 
 ---
 ## 6. Technical Deep Dive (for Healthcare Experts)
 **Scheduling:**
 - Simulates preemptive priority scheduling—always runs the most critical ready task.
+- **Round-Robin:** For tasks with the same priority, the scheduler cycles through them to ensure fairness.
 - Task states: READY → RUNNING → SLEEP/BLOCKED → READY.
 - Deterministic: Same input always produces same output—no surprises.
 
@@ -96,11 +98,16 @@ Our kernel is designed for clarity, predictability, and easy inspection—making
 - Mutex ensures only one task updates shared data at a time—prevents race conditions.
 - Future: Priority inheritance to prevent priority inversion.
 
+**Alerting System:**
+- The kernel can generate critical alerts (e.g., abnormal vitals).
+- The UI displays a prominent, flashing banner and plays an audible sound, which can be dismissed by the user.
+
 **Data Streaming Format:**
 Every kernel event is sent as a JSON line, e.g.:
 ```json
 {"type":"log_entry","message":"Scheduler: Running Task 0 (Priority: 3)"}
-{"type":"data","tick":42,"hr":74}
+{"type":"data","tick":42,"hr":74,"spo2":98}
+{"type":"alert","message":"Critical Alert: Heart Rate Unstable"}
 ```
 Server parses each line and relays it to the browser.
 
@@ -108,7 +115,8 @@ Server parses each line and relays it to the browser.
 - Autoscroll (only if user is at bottom).
 - Pause/Resume buffers and flushes events for narration.
 - Start/Stop stream resets kernel state for reproducible demo.
-- Graph shows up to 50 heart rate points for clarity.
+- Graphs show up to 50 data points for clarity.
+- Sound notifications for new data points and alerts.
 
 **Testing:**
 - Basic tests confirm correct task creation and scheduler startup.

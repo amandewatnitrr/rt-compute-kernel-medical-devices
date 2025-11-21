@@ -134,6 +134,40 @@ h3 {
 .log-box .log-line.task-2 { color: #ff9cac; } /* Display */
 .log-box .log-line.scheduler { color: #89ddff; }
 .log-box .log-line.mutex { color: #c792ea; }
+.log-box .log-line.critical-alert { color: #ff4d4d; font-weight: bold; }
+
+.alert-banner {
+    display: none;
+    padding: 10px 20px;
+    background-color: #ff4d4d;
+    color: white;
+    text-align: center;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    animation: flash 1s infinite;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#stop-alert-btn {
+    background-color: #fff;
+    color: #e60000;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+@keyframes flash {
+    0%, 100% { background-color: #ff4d4d; }
+    50% { background-color: #e60000; }
+}
 
 
 footer {

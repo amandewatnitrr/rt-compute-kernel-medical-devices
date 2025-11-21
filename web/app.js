@@ -6,7 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeBtn = document.getElementById('resumeBtn');
     const stopBtn = document.getElementById('stopBtn');
     const startBtn = document.getElementById('startBtn');
+    const alertBanner = document.getElementById('alert-banner');
+    const alertMessage = document.getElementById('alert-message');
+    const stopAlertBtn = document.getElementById('stop-alert-btn');
 
+    let audioCtx;
+    let oscillator;
+    let alertSound;
     let paused = false;
     let streamStopped = false;
     let bufferedMessages = [];
@@ -38,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderColor: 'rgba(54, 162, 235, 1)',
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
                     borderWidth: 2,
-                    fill: false,
+                    fill: true,
                     tension: 0.4
                 }
             ]
@@ -82,6 +88,51 @@ document.addEventListener('DOMContentLoaded', () => {
         chart.update();
     }
 
+    function playSound() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // A4 pitch
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Low volume
+        gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.1);
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function playAlertSound() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (alertSound && alertSound.context.state === 'running') {
+            alertSound.stop();
+        }
+        alertSound = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        alertSound.type = 'square';
+        alertSound.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 pitch
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+        alertSound.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        alertSound.start();
+    }
+
+    function stopAlertSound() {
+        if (alertSound) {
+            alertSound.stop();
+        }
+    }
+
     function addLog(message) {
         const line = document.createElement('div');
         line.className = 'log-line';
@@ -98,6 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
             line.classList.add('scheduler');
         } else if (message.includes('Mutex')) {
             line.classList.add('mutex');
+        } else if (message.includes('CRITICAL')) {
+            line.classList.add('critical-alert'); // Style for critical logs
         }
 
         line.textContent = message;
@@ -119,9 +172,19 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } else if (data.type === 'data') {
             addData(data.tick, data.hr, data.spo2);
+            playSound();
         } else if (data.type === 'log_entry') {
             addLog(data.message);
+        } else if (data.type === 'alert') {
+            alertMessage.textContent = data.message;
+            alertBanner.style.display = 'flex';
+            playAlertSound();
         }
+    });
+
+    stopAlertBtn.addEventListener('click', () => {
+        alertBanner.style.display = 'none';
+        stopAlertSound();
     });
 
     // Pause logic
@@ -143,8 +206,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             } else if (data.type === 'data') {
                 addData(data.tick, data.hr, data.spo2);
+                playSound();
             } else if (data.type === 'log_entry') {
                 addLog(data.message);
+            } else if (data.type === 'alert') {
+                alertMessage.textContent = data.message;
+                alertBanner.style.display = 'flex';
+                playAlertSound();
             }
         });
         bufferedMessages = [];
@@ -162,6 +230,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Start stream (request backend to respawn process)
     startBtn.addEventListener('click', () => {
         if (!streamStopped) return;
+
+        // Clear logs and chart data
+        log.innerHTML = '';
+        chart.data.labels = [];
+        chart.data.datasets.forEach((dataset) => {
+            dataset.data = [];
+        });
+        chart.update();
+
         socket.emit('start_stream');
         streamStopped = false;
         startBtn.style.display = 'none';

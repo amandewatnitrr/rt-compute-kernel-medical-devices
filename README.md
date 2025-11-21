@@ -8,10 +8,12 @@ The kernel is written in C for performance, portability, and low-level hardware 
 
 ### Key Features
 
-- **Deterministic Task Scheduling:** A priority-based, preemptive scheduler ensures that the highest-priority task is always running, providing predictable execution behavior.
+- **Deterministic Task Scheduling:** A priority-based, preemptive scheduler ensures that the highest-priority task is always running. It uses round-robin scheduling for tasks of the same priority to ensure fair execution.
 - **Task Management:** A simple API for creating, managing, and synchronizing tasks.
 - **Synchronization:** Mutexes for safe access to shared resources, preventing data corruption and race conditions.
 - **Real-Time Clock:** A system tick that drives the scheduler and allows for precise timing of tasks.
+- **Critical Alert Simulation:** Demonstrates how the kernel can identify and flag critical events (e.g., abnormal vital signs) and propagate them to the user interface.
+- **Cross-Platform:** Compatible with Windows, macOS, and Linux.
 - **Testability:** Includes a suite of unit tests to verify the correctness and reliability of the kernel's components.
 - **Extensive Documentation:** Comprehensive documentation to facilitate understanding, use, and certification.
 
@@ -99,7 +101,7 @@ This will build and run the `bin/run_tests` executable, which verifies the funct
 
 ## Web UI Visualization
 
-This project includes a web-based user interface to visualize the kernel's execution in real-time. It features a live graph of the simulated patient's heart rate and a detailed log of the kernel's scheduling decisions.
+This project includes a web-based user interface to visualize the kernel's execution in real-time. It features a live graph of the simulated patient's vital signs, a detailed log of kernel events, and a flashing alert banner for critical events.
 
 ### Running the Web UI
 
@@ -125,18 +127,17 @@ This project includes a web-based user interface to visualize the kernel's execu
 
 ## Demo Scenario
 
-The main application (`main.c`) simulates a simple medical device with three concurrent tasks:
+The main application (`main.c`) simulates a simple medical device with four concurrent tasks:
 
 1. **Vital Signs Monitoring (High Priority)**
-   - Represents a critical task that reads and processes a patient's vital signs (e.g., heart rate).
-   - Runs frequently and must not be delayed.
+   - Represents a critical task that reads and processes a patient's vital signs.
+   - Runs frequently and can trigger critical alerts if vitals are abnormal.
 
 2. **Drug Delivery System (Medium Priority)**
    - Represents a task that administers medication at a regular interval.
-   - It is important but less critical than monitoring vital signs.
 
-3. **Display Update (Low Priority)**
-   - Updates a display with the current status or data.
-   - This task runs when no higher-priority tasks are ready.
+3. **Display Update (Low Priority, 2 tasks)**
+   - Two separate tasks that update a display with the current status or data.
+   - These tasks run at the same low priority to demonstrate round-robin scheduling.
 
-The demo showcases the preemptive nature of the scheduler. You will see the high-priority task interrupting the lower-priority ones to ensure it meets its real-time deadlines. The mutex is used to safely update a shared data structure containing the medical data.
+The demo showcases the preemptive nature of the scheduler. You will see the high-priority task interrupting the lower-priority ones, and the two display tasks taking turns to run. The mutex is used to safely update a shared data structure containing the medical data.

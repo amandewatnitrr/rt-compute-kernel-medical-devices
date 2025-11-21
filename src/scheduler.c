@@ -4,6 +4,7 @@
 
 static tcb_t* ready_queue[MAX_TASKS];
 static int ready_queue_size = 0;
+static int last_scheduled_index = -1;
 
 // Internal function declarations
 void task_set_current(tcb_t* task);
@@ -12,6 +13,7 @@ uint32_t task_get_count();
 
 void scheduler_init() {
     ready_queue_size = 0;
+    last_scheduled_index = -1;
 }
 
 void scheduler_add_task(tcb_t* task) {
@@ -24,10 +26,26 @@ void schedule() {
     tcb_t* next_task = NULL;
     int highest_priority = -1;
 
+    // First, find the highest priority among all ready tasks
     for (int i = 0; i < ready_queue_size; i++) {
         if (ready_queue[i]->state == TASK_READY && (int)ready_queue[i]->priority > highest_priority) {
             highest_priority = ready_queue[i]->priority;
-            next_task = ready_queue[i];
+        }
+    }
+
+    if (highest_priority == -1) {
+        printf("{\"type\": \"log_entry\", \"message\": \"Scheduler: No ready tasks. Idling.\"}\n");
+        return;
+    }
+
+    // Now, find the next ready task at that highest priority, using a round-robin approach
+    int start_index = (last_scheduled_index + 1) % ready_queue_size;
+    for (int i = 0; i < ready_queue_size; i++) {
+        int current_index = (start_index + i) % ready_queue_size;
+        if (ready_queue[current_index]->state == TASK_READY && (int)ready_queue[current_index]->priority == highest_priority) {
+            next_task = ready_queue[current_index];
+            last_scheduled_index = current_index;
+            break;
         }
     }
 

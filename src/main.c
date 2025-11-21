@@ -19,10 +19,22 @@ mutex_t data_mutex;
 // High-priority task: Monitors vital signs
 void task_monitor_vitals(void* arg) {
     (void)arg;
+    static int alert_counter = 0;
+    // Approx. 10 minutes in ticks, assuming 1 tick = 0.5s. 10 * 60 / 0.5 = 1200
+    const int alert_interval = 1200; 
+
     printf("{\"type\": \"log_entry\", \"message\": \"VitalSigns: Task started.\"}\n");
     
     mutex_lock(&data_mutex);
-    shared_medical_data.heart_rate = 70 + (timer_get_ticks() % 15) - 5; // Simulate reading
+
+    // Simulate occasional critical events
+    if (timer_get_ticks() > 0 && (timer_get_ticks() % alert_interval) == 0) {
+        shared_medical_data.heart_rate = 150 + (timer_get_ticks() % 10); // Dangerously high HR
+        printf("{\"type\": \"alert\", \"message\": \"CRITICAL: Heart Rate is dangerously high!\"}\n");
+    } else {
+        shared_medical_data.heart_rate = 70 + (timer_get_ticks() % 15) - 5; // Normal HR
+    }
+
     shared_medical_data.spo2 = 95 + (timer_get_ticks() % 5); // Simulate SpO2 (95-99)
     printf("{\"type\": \"data\", \"tick\": %d, \"hr\": %d, \"spo2\": %d}\n", timer_get_ticks(), shared_medical_data.heart_rate, shared_medical_data.spo2);
     printf("{\"type\": \"log_entry\", \"message\": \"VitalSigns: HR=%d bpm, SpO2=%d%%.\"}\n", shared_medical_data.heart_rate, shared_medical_data.spo2);
@@ -57,6 +69,14 @@ void task_update_display(void* arg) {
     kernel_sleep(3); // Run every 3 ticks
 }
 
+// Another low-priority task to demonstrate round-robin
+void task_update_display_2(void* arg) {
+    (void)arg;
+    printf("{\"type\": \"log_entry\", \"message\": \"Display 2: Task started.\"}\n");
+    printf("{\"type\": \"log_entry\", \"message\": \"Display 2: Performing secondary display update.\"}\n");
+    kernel_sleep(3); // Run every 3 ticks
+}
+
 
 // --- Main Application ---
 
@@ -80,6 +100,7 @@ int main() {
     task_create(task_monitor_vitals, NULL, 3);  // Highest priority
     task_create(task_deliver_drug, NULL, 2);    // Medium priority
     task_create(task_update_display, NULL, 1);  // Lowest priority
+    task_create(task_update_display_2, NULL, 1); // Same lowest priority
 
     // Start the kernel
     // This function will not return.

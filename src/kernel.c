@@ -2,7 +2,12 @@
 #include "scheduler.h"
 #include "timer.h"
 #include <stdio.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 extern void schedule(); // Forward declaration
 
@@ -18,7 +23,11 @@ void kernel_start() {
     while (1) {
         systick_handler();
         schedule(); // Run the scheduler
-        usleep(500000); // 0.5s delay for visualization
+        #ifdef _WIN32
+        Sleep(500); // 500ms delay for visualization on Windows
+        #else
+        usleep(500000); // 0.5s delay for visualization on POSIX
+        #endif
     }
 }
 
