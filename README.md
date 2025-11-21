@@ -97,6 +97,32 @@ This will build and run the `bin/run_tests` executable, which verifies the funct
 
 ---
 
+## Web UI Visualization
+
+This project includes a web-based user interface to visualize the kernel's execution in real-time. It features a live graph of the simulated patient's heart rate and a detailed log of the kernel's scheduling decisions.
+
+### Running the Web UI
+
+1.  **Navigate to the `web` directory:**
+    ```bash
+    cd web
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Start the server:**
+    ```bash
+    npm start
+    ```
+
+4.  **Open your browser:**
+    Navigate to `http://localhost:3000` to see the visualization.
+
+---
+
 ## Demo Scenario
 
 The main application (`main.c`) simulates a simple medical device with three concurrent tasks:

@@ -9,7 +9,6 @@ static int ready_queue_size = 0;
 void task_set_current(tcb_t* task);
 tcb_t* task_get_all_tasks();
 uint32_t task_get_count();
-void timer_tick();
 
 void scheduler_init() {
     ready_queue_size = 0;
@@ -22,7 +21,6 @@ void scheduler_add_task(tcb_t* task) {
 }
 
 void schedule() {
-    // Find the highest priority ready task
     tcb_t* next_task = NULL;
     int highest_priority = -1;
 
@@ -42,33 +40,27 @@ void schedule() {
         next_task->state = TASK_RUNNING;
         task_set_current(next_task);
 
-        // Simulate context switch and run the task
-        printf("Scheduler: Running Task %d (Priority: %d)\n", next_task->id, next_task->priority);
+        printf("{\"type\": \"log_entry\", \"message\": \"Scheduler: Running Task %d (Priority: %d)\"}\n", next_task->id, next_task->priority);
         next_task->task_func(next_task->arg);
 
-        // If the task function returns, it's considered finished for this simulation
         if (next_task->state == TASK_RUNNING) {
              next_task->state = TASK_READY;
         }
     } else {
-        // No ready tasks, idle
-        printf("Scheduler: No ready tasks. Idling.\n");
+        printf("{\"type\": \"log_entry\", \"message\": \"Scheduler: No ready tasks. Idling.\"}\n");
     }
 }
 
-// This function is called by the timer interrupt handler
 void scheduler_tick() {
     tcb_t* all_tasks = task_get_all_tasks();
     uint32_t num_tasks = task_get_count();
     uint32_t current_ticks = timer_get_ticks();
 
-    // Check for tasks that were sleeping
     for (uint32_t i = 0; i < num_tasks; i++) {
         if (all_tasks[i].state == TASK_BLOCKED && current_ticks >= all_tasks[i].sleep_ticks) {
             all_tasks[i].state = TASK_READY;
         }
     }
 
-    // Trigger a reschedule
     schedule();
 }

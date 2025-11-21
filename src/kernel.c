@@ -2,24 +2,22 @@
 #include "scheduler.h"
 #include "timer.h"
 #include <stdio.h>
+#include <unistd.h>
 
 extern void schedule(); // Forward declaration
 
 void kernel_init() {
-    printf("Kernel: Initializing...\n");
+    printf("{\"type\": \"log_entry\", \"message\": \"Kernel: Initializing...\"}\n");
     scheduler_init();
     timer_init();
-    printf("Kernel: Initialization complete.\n");
+    printf("{\"type\": \"log_entry\", \"message\": \"Kernel: Initialization complete.\"}\n");
 }
 
 void kernel_start() {
-    printf("Kernel: Starting multitasking...\n");
-    // This would normally set up the first task and timer interrupt.
-    // For this simulation, we will enter a loop and call the scheduler.
+    printf("{\"type\": \"log_entry\", \"message\": \"Kernel: Starting multitasking...\"}\n");
     while (1) {
-        // In a real kernel, this loop would be replaced by an idle task
-        // and scheduling would be purely interrupt-driven.
         systick_handler();
+        usleep(20000000); // 20s delay to slow down the simulation for visualization
     }
 }
 

@@ -2,6 +2,7 @@
 #include "task.h"
 #include "timer.h"
 #include <stdio.h>
+#include <unistd.h> // For usleep
 
 // Shared data representing medical device readings
 typedef struct {
@@ -16,11 +17,13 @@ mutex_t data_mutex;
 
 // High-priority task: Monitors vital signs
 void task_monitor_vitals(void* arg) {
-    printf("VitalSigns: Task started.\n");
+    (void)arg;
+    printf("{\"type\": \"log_entry\", \"message\": \"VitalSigns: Task started.\"}\n");
     
     mutex_lock(&data_mutex);
-    shared_medical_data.heart_rate = 70 + (timer_get_ticks() % 5); // Simulate reading
-    printf("VitalSigns: Heart rate is %d bpm.\n", shared_medical_data.heart_rate);
+    shared_medical_data.heart_rate = 70 + (timer_get_ticks() % 15) - 5; // Simulate reading
+    printf("{\"type\": \"data\", \"tick\": %d, \"hr\": %d}\n", timer_get_ticks(), shared_medical_data.heart_rate);
+    printf("{\"type\": \"log_entry\", \"message\": \"VitalSigns: Heart rate is %d bpm.\"}\n", shared_medical_data.heart_rate);
     mutex_unlock(&data_mutex);
 
     kernel_sleep(2); // Run every 2 ticks
@@ -28,11 +31,12 @@ void task_monitor_vitals(void* arg) {
 
 // Medium-priority task: Administers medication
 void task_deliver_drug(void* arg) {
-    printf("DrugDelivery: Task started.\n");
+    (void)arg;
+    printf("{\"type\": \"log_entry\", \"message\": \"DrugDelivery: Task started.\"}\n");
 
     mutex_lock(&data_mutex);
     shared_medical_data.drug_delivery_status = 1; // Administering
-    printf("DrugDelivery: Administering medication.\n");
+    printf("{\"type\": \"log_entry\", \"message\": \"DrugDelivery: Administering medication.\"}\n");
     mutex_unlock(&data_mutex);
 
     kernel_sleep(5); // Run every 5 ticks
@@ -40,10 +44,11 @@ void task_deliver_drug(void* arg) {
 
 // Low-priority task: Updates the display
 void task_update_display(void* arg) {
-    printf("Display: Task started.\n");
+    (void)arg;
+    printf("{\"type\": \"log_entry\", \"message\": \"Display: Task started.\"}\n");
 
     mutex_lock(&data_mutex);
-    printf("Display: Updating screen - HR: %d, Drug Status: %d\n", 
+    printf("{\"type\": \"log_entry\", \"message\": \"Display: Updating screen - HR: %d, Drug Status: %d\"}\n", 
            shared_medical_data.heart_rate, shared_medical_data.drug_delivery_status);
     mutex_unlock(&data_mutex);
 
@@ -54,8 +59,11 @@ void task_update_display(void* arg) {
 // --- Main Application ---
 
 int main() {
-    printf("Medical Device Kernel Demo\n");
-    printf("--------------------------\n");
+    // Set stdout to be unbuffered
+    setvbuf(stdout, NULL, _IONBF, 0);
+
+    printf("{\"type\": \"log_entry\", \"message\": \"Medical Device Kernel Demo\"}\n");
+    printf("{\"type\": \"log_entry\", \"message\": \"--------------------------\"}\n");
 
     // Initialize shared data and mutex
     shared_medical_data.heart_rate = 0;
