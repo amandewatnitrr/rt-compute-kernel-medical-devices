@@ -7,6 +7,7 @@
 // Shared data representing medical device readings
 typedef struct {
     int heart_rate;
+    int spo2;
     int drug_delivery_status;
 } medical_data_t;
 
@@ -22,8 +23,9 @@ void task_monitor_vitals(void* arg) {
     
     mutex_lock(&data_mutex);
     shared_medical_data.heart_rate = 70 + (timer_get_ticks() % 15) - 5; // Simulate reading
-    printf("{\"type\": \"data\", \"tick\": %d, \"hr\": %d}\n", timer_get_ticks(), shared_medical_data.heart_rate);
-    printf("{\"type\": \"log_entry\", \"message\": \"VitalSigns: Heart rate is %d bpm.\"}\n", shared_medical_data.heart_rate);
+    shared_medical_data.spo2 = 95 + (timer_get_ticks() % 5); // Simulate SpO2 (95-99)
+    printf("{\"type\": \"data\", \"tick\": %d, \"hr\": %d, \"spo2\": %d}\n", timer_get_ticks(), shared_medical_data.heart_rate, shared_medical_data.spo2);
+    printf("{\"type\": \"log_entry\", \"message\": \"VitalSigns: HR=%d bpm, SpO2=%d%%.\"}\n", shared_medical_data.heart_rate, shared_medical_data.spo2);
     mutex_unlock(&data_mutex);
 
     kernel_sleep(2); // Run every 2 ticks
@@ -48,8 +50,8 @@ void task_update_display(void* arg) {
     printf("{\"type\": \"log_entry\", \"message\": \"Display: Task started.\"}\n");
 
     mutex_lock(&data_mutex);
-    printf("{\"type\": \"log_entry\", \"message\": \"Display: Updating screen - HR: %d, Drug Status: %d\"}\n", 
-           shared_medical_data.heart_rate, shared_medical_data.drug_delivery_status);
+    printf("{\"type\": \"log_entry\", \"message\": \"Display: Updating screen - HR: %d, SpO2: %d, Drug Status: %d\"}\n", 
+           shared_medical_data.heart_rate, shared_medical_data.spo2, shared_medical_data.drug_delivery_status);
     mutex_unlock(&data_mutex);
 
     kernel_sleep(3); // Run every 3 ticks
@@ -67,6 +69,7 @@ int main() {
 
     // Initialize shared data and mutex
     shared_medical_data.heart_rate = 0;
+    shared_medical_data.spo2 = 0;
     shared_medical_data.drug_delivery_status = 0;
     mutex_init(&data_mutex);
 

@@ -22,15 +22,26 @@ document.addEventListener('DOMContentLoaded', () => {
         type: 'line',
         data: {
             labels: [],
-            datasets: [{
-                label: 'Heart Rate (BPM)',
-                data: [],
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderWidth: 2,
-                fill: true,
-                tension: 0.4
-            }]
+            datasets: [
+                {
+                    label: 'Heart Beat',
+                    data: [],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'SpO2 (%)',
+                    data: [],
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4
+                }
+            ]
         },
         options: {
             scales: {
@@ -44,10 +55,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 y: {
                     beginAtZero: false,
                     suggestedMin: 60,
-                    suggestedMax: 90,
+                    suggestedMax: 100,
                     title: {
                         display: true,
-                        text: 'Heart Rate'
+                        text: 'Value'
                     }
                 }
             },
@@ -57,16 +68,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    function addData(label, data) {
+    function addData(label, hr, spo2) {
         chart.data.labels.push(label);
-        chart.data.datasets.forEach((dataset) => {
-            dataset.data.push(data);
-        });
+        chart.data.datasets[0].data.push(hr);
+        chart.data.datasets[1].data.push(spo2);
 
         // Limit the number of data points
         if (chart.data.labels.length > 50) {
             chart.data.labels.shift();
             chart.data.datasets[0].data.shift();
+            chart.data.datasets[1].data.shift();
         }
         chart.update();
     }
@@ -107,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (line.trim()) addLog(line.trim());
             });
         } else if (data.type === 'data') {
-            addData(data.tick, data.hr);
+            addData(data.tick, data.hr, data.spo2);
         } else if (data.type === 'log_entry') {
             addLog(data.message);
         }
@@ -131,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (line.trim()) addLog(line.trim());
                 });
             } else if (data.type === 'data') {
-                addData(data.tick, data.hr);
+                addData(data.tick, data.hr, data.spo2);
             } else if (data.type === 'log_entry') {
                 addLog(data.message);
             }

@@ -17,7 +17,8 @@ void kernel_start() {
     printf("{\"type\": \"log_entry\", \"message\": \"Kernel: Starting multitasking...\"}\n");
     while (1) {
         systick_handler();
-        usleep(20000000); // 20s delay to slow down the simulation for visualization
+        schedule(); // Run the scheduler
+        usleep(500000); // 0.5s delay for visualization
     }
 }
 
